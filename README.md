@@ -8,15 +8,11 @@ Instructions:
 * The objective is to obtain as high of a score as possible.
 * The score obtained increases exponentially with the length of the connected tiles.
 
-Features:
-* Mouse input
-* Rendering of two-dimensional list
-* Score system
-
 Upcoming features:
-* High score system
-* Custom board size
+* Endless levels with target scores for each level
+* Ability for game to automatically end if no more moves can be made
+* Animated visual in-game instructions
 
 Versions used: Python 3.4.4, pygame 1.9.2
 
-Version 0.1
+Version 0.2
