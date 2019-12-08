@@ -1,6 +1,6 @@
 import pygame, sys, random
 from pygame.locals import *
-from math import floor
+from math import floor, ceil
 
 # Set up pygame.
 pygame.init()
@@ -9,19 +9,17 @@ pygame.init()
 windowSurface = pygame.display.set_mode((500,400), 0, 32)
 pygame.display.set_caption('Plus-Minus')
 
+mainClock = pygame.time.Clock()
+
 # Set up the colours.
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 BLUE = (69, 136, 255)
 RED = (255, 69, 74)
+DARK_RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 ORANGE = (255, 128, 0)
 
-selectedTile = []
-score = 0
-boardSize = 8
-tileSize = 45
-frameSize = 50
 TILE_COLOUR = (RED, BLUE, WHITE, ORANGE, GREEN)
 
 # Set up the fonts.
@@ -37,21 +35,31 @@ sPlusRect = S_PLUS_SIGN.get_rect()
 minusRect = MINUS_SIGN.get_rect()
 sMinusRect = S_MINUS_SIGN.get_rect()
 
+def setToDefault():
+    global selectedTile, targetScore, maxTime, timer, score, boardSize, tileSize, frameSize, board
+
+    selectedTile = []
+    targetScore = 500
+    maxTime = 200
+    timer = 200
+    score = 0
+    boardSize = 8
+    tileSize = 45
+    frameSize = 50
+    board = generateBoard()
+
+def drawText(text, pos):
+    text = basicFont.render(text, True, BLACK, WHITE)
+    textRect = text.get_rect()
+    textRect.left = pos[0]
+    textRect.top = pos[1]
+    windowSurface.blit(text, textRect)
 
 def drawMenu():
-    def drawText(text, pos):
-        text = basicFont.render(text, True, BLACK, WHITE)
-        textRect = text.get_rect()
-        textRect.left = pos[0]
-        textRect.top = pos[1]
-        windowSurface.blit(text, textRect)
     drawText('Score: ' + str(score), (400, 300))
     drawText('Controls:', (400, 10))
     drawText('R to reset', (400, 30))
-    drawText('C to confirm', (400, 50))
-
-# Draw the background.
-windowSurface.fill(WHITE)
+    drawText('Time left:', (400, 70))
 
 def generateBoard():
     board = []
@@ -90,53 +98,66 @@ def drawBoard(board):
                         windowSurface.blit(S_PLUS_SIGN, sPlusRect)
 
     drawMenu()
-    pygame.display.update()
 
-board = generateBoard()
-drawBoard(board)
+# Set the game variables.
+setToDefault()
 
+# Main game loop.
 while True:
+    # Draw the background.
+    windowSurface.fill(WHITE)
+
     for event in pygame.event.get():
         if event.type == KEYDOWN:
-            # Add to score if 'c' key is pressed
-            if event.key == K_c and len(selectedTile) > 1:
-                for tile in selectedTile:
-                    board[tile[1]][tile[0]] = 2
-                score = score + 2**len(selectedTile)
-                selectedTile = []
             # Reset game if 'r' key is pressed
             if event.key == K_r:
-                score = 0
-                selectedTile = []
-                windowSurface.fill(WHITE)
-                board = generateBoard()
-        if event.type == MOUSEBUTTONDOWN:
-            x, y = pygame.mouse.get_pos()
-            x = floor(x/frameSize)
-            y = floor(y/frameSize)
-            # Check if coordinates are within range of board
-            if x <= 7:
-                if board[y][x] != 2:
-                    if len(selectedTile) == 0:  # If no tiles are selected
-                        selectedTile.append([x,y])
-                    else:   # If at least one tile is selected
-                        if [x,y] in selectedTile and len(selectedTile) == 1: # If a selected tile is clicked on
-                            selectedTile.remove([x,y])
-                        elif [x,y+1] in selectedTile: # If tile directly below is selected
-                            if board[y][x] != board[y+1][x]:
-                                selectedTile.append([x,y])
-                        elif [x,y-1] in selectedTile: # If tile directly above is selected
-                            if board[y][x] != board[y-1][x]:
-                                selectedTile.append([x,y])
-                        elif [x+1,y] in selectedTile: # If tile directly right is selected
-                            if board[y][x] != board[y][x+1]:
-                                selectedTile.append([x,y])
-                        elif [x-1,y] in selectedTile: # If tile directly left is selected
-                            if board[y][x] != board[y][x-1]:
-                                selectedTile.append([x,y])
+                setToDefault()
+        if event.type == MOUSEBUTTONDOWN and timer > 0:
+            if event.button == 3 and len(selectedTile) > 1:
+                for tile in selectedTile:
+                    board[tile[1]][tile[0]] = 2
+                    score = score + 2**len(selectedTile)
+                    selectedTile = []  
+            elif event.button == 1:
+                x, y = pygame.mouse.get_pos()
+                x = floor(x/frameSize)
+                y = floor(y/frameSize)
+                # Check if coordinates are within range of board
+                if x <= 7:
+                    if board[y][x] != 2:
+                        if len(selectedTile) == 0:  # If no tiles are selected
+                            selectedTile.append([x,y])
+                        else:   # If at least one tile is selected
+                            if [x,y] in selectedTile and len(selectedTile) == 1: # If a selected tile is clicked on
+                                selectedTile.remove([x,y])
+                            elif [x,y+1] in selectedTile: # If tile directly below is selected
+                                if board[y][x] != board[y+1][x]:
+                                    selectedTile.append([x,y])
+                            elif [x,y-1] in selectedTile: # If tile directly above is selected
+                                if board[y][x] != board[y-1][x]:
+                                    selectedTile.append([x,y])
+                            elif [x+1,y] in selectedTile: # If tile directly right is selected
+                                if board[y][x] != board[y][x+1]:
+                                    selectedTile.append([x,y])
+                            elif [x-1,y] in selectedTile: # If tile directly left is selected
+                                if board[y][x] != board[y][x-1]:
+                                    selectedTile.append([x,y])
 
         # Ensure game closes correctly
-        drawBoard(board)
         if event.type == QUIT:
             pygame.quit()
             sys.exit()
+
+    if timer > 0:
+        timer -= 0.1
+        timerBox = pygame.Rect(400, 90, ceil(timer/maxTime*90), 10)
+        pygame.draw.rect(windowSurface, DARK_RED, timerBox)
+        drawBoard(board)
+    else:
+        drawText('Game over!', (210, 160))
+        drawText('Your score: ' + str(score), (175, 200))
+        drawText('Press R to play again.', (175, 220))
+
+    pygame.display.update()
+
+    mainClock.tick(40)
