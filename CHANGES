@@ -1,2 +1,7 @@
 0.1:
 - First version.
+
+
+0.2:
+- There is now a timer which ends the game when it reaches zero.
+- Right-click is now used to confirm a selection rather than pressing C.
